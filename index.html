@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.4, maximum-scale=1.5, user-scalable=yes">
+    <title>MGZ</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Botón Atrás - Flecha ← (doble tamaño y 1cm más a la izquierda) */
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: calc(20px + 1cm); /* 1cm más a la izquierda */
+            width: 120px; /* Doble de tamaño */
+            height: 120px;
+            background-color: #f44336;
+            color: white;
+            border-radius: 50%;
+            border: none;
+            font-size: 48px; /* Texto más grande */
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #d32f2f;
+            transform: scale(1.1);
+        }
+
+        /* Ocultar en desktop (opcional) */
+        @media (min-width: 1025px) {
+            .back-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <iframe id="contentFrame"
+            src="https://script.google.com/macros/s/AKfycbx_R4b__6qH6ghltv3jmOfFnwhkM_jiEICexD3auJfaW3R0dY4L_cwwOdsHUkRSQTxbmg/exec"
+            frameborder="0" allow="camera"></iframe>
+</div>
+
+<!-- Botón Atrás con flecha ← (en lugar de la X) -->
+<button class="back-button" onclick="goBack()">←</button>
+
+<script>
+    const frame = document.getElementById('contentFrame');
+    const originalSrc = frame.src;
+
+    // Función para volver atrás (recarga el iframe original)
+    function goBack() {
+        frame.src = originalSrc;
+    }
+
+    // Interceptar enlaces y window.open en el iframe
+    frame.addEventListener('load', function() {
+        try {
+            const injectionScript = `
+                // Interceptar clicks en enlaces
+                document.addEventListener('click', function(e) {
+                    let target = e.target;
+                    while (target && target.tagName !== 'A' && target !== document) {
+                        target = target.parentNode;
+                    }
+
+                    if (target && target.tagName === 'A' && target.href) {
+                        // Forzar que se abran en el mismo iframe
+                        if (target.target === '_blank') {
+                            e.preventDefault();
+                            window.location.href = target.href;
+                        }
+                    }
+                });
+
+                // Sobrescribir window.open
+                const originalOpen = window.open;
+                window.open = function(url, target, features) {
+                    if (url && (target === '_blank' || target === 'new')) {
+                        window.location.href = url;
+                        return null;
+                    }
+                    return originalOpen(url, target, features);
+                };
+            `;
+
+            const script = document.createElement('script');
+            script.textContent = injectionScript;
+            frame.contentWindow.document.head.appendChild(script);
+        } catch (e) {
+            console.log("No se pudo inyectar script (CORS)");
+        }
+    });
+</script>
+</body>
+</html>
